@@ -4,12 +4,17 @@ from statsmodels.tsa.stattools import grangercausalitytests as gct
 import scipy.stats
 from scipy.stats.stats import pearsonr
 from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import cross_val_score
 from statistics import median
+from sklearn.model_selection import GridSearchCV
+import warnings
+
+warnings.filterwarnings("ignore")
 
 def ADF(z):
   result=adfuller(z)
-  print('ADF Statistic-Visitors: %f' % result[0]);print('p-value: %f' % result[1]);print('Critical Values:')
+  print('ADF Statistic: %f' % result[0]);print('p-value: %f' % result[1]);print('Critical Values:')
   for key, value in result[4].items():print('\t%s: %.3f' % (key, value))
 
 def NORM(x):
@@ -29,7 +34,7 @@ def GCT(y,x):
   gr_test=[item for item in gt.get(lag)[0]['params_ftest']];
   F_crit=int(round(scipy.stats.f.ppf(q=(1-gr_test[1]), dfn=gr_test[3], dfd=gr_test[2])))
   print('p='+str(format(gr_test[1], '.2f')))#p-value
-  #print("[F/F_crit]="+str(format(gr_test[0]/F_crit, '.2f')))#F/F_crit
+  print("[F/F_crit]="+str(format(gr_test[0]/F_crit, '.2f')))#F/F_crit
 
 def CF(x,y):
   CFV=pearsonr(x,y)
@@ -55,3 +60,27 @@ def LOGREGR(x,y,z):
   cv_score_std=100*np.std(cv_scores);cv_score_std=cv_score_std.astype(int)
   score_list=[cv_score_mean,cv_score_std] 
   print('<SCORE_INV='+str(np.around(score_list[0]))+'%'+'['+str(np.around(score_list[1]))+'%]')
+
+def KNN(x,y,z):
+
+  threshold=median(list(z)) 
+  l=[]
+  for item in list(z):
+    if item>=threshold: label=1;l.append(label)
+    if item<threshold: label=0;l.append(label)  
+
+  param_grid = {'n_neighbors': np.arange(1,100)}
+  knn = KNeighborsClassifier()
+  x1=list(x);x2=list(y);
+  X_features=np.array([x1,x2]);X_features=np.transpose(X_features)
+  knn_cv=GridSearchCV(knn, param_grid, scoring='roc_auc', cv=5)
+  knn_cv.fit(X_features,l)
+  n_opt=knn_cv.best_params_['n_neighbors']
+
+  knn=KNeighborsClassifier(n_neighbors=n_opt) 
+  cv_scores=cross_val_score(knn,X_features,l,cv=5,scoring='roc_auc')
+
+  cv_score_mean=100*np.mean(cv_scores);cv_score_mean=cv_score_mean.astype(int)
+  cv_score_std=100*np.std(cv_scores);cv_score_std=cv_score_std.astype(int)
+  score_list=[cv_score_mean,cv_score_std] 
+  print('<SCORE_INV='+str(np.around(score_list[0]))+'%'+'['+str(np.around(score_list[1]))+'%]')  
