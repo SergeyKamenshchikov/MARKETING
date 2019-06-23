@@ -1,2 +1,2 @@
 # WEB MARKETING
-FACTOR ANALYSIS AND THE SELECTION OF MARKETING STRATEGY USING ML: see web_ml_new and web_ml_ret for the new and returning organic traffic
+Factor analysis and the selection of marketing strategy using machine learning: see web_ml_new.ipynb and web_ml_ret.ipynb for the new and returning organic traffic
